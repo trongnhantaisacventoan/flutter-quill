@@ -1266,7 +1266,8 @@ class RawEditorState extends EditorState
   void copySelection(SelectionChangedCause cause) {
     controller.copiedImageUrl = null;
     _pastePlainText = controller.getPlainText();
-    _pasteStyle = controller.getAllIndividualSelectionStyles();
+    // _pasteStyle = controller.getAllIndividualSelectionStyles();
+    _pasteStyle = []; // TODO NHANNT copy style error
 
     final selection = textEditingValue.selection;
     final text = textEditingValue.text;
@@ -1520,6 +1521,7 @@ class RawEditorState extends EditorState
     ExtendSelectionToLineBreakIntent: _makeOverridable(
         _UpdateTextSelectionAction<ExtendSelectionToLineBreakIntent>(
             this, true, _linebreak)),
+
     ExtendSelectionVerticallyToAdjacentLineIntent:
         _makeOverridable(_adjacentLineAction),
     ExtendSelectionToDocumentBoundaryIntent: _makeOverridable(
@@ -1527,6 +1529,11 @@ class RawEditorState extends EditorState
             this, true, _documentBoundary)),
     ExtendSelectionToNextWordBoundaryOrCaretLocationIntent: _makeOverridable(
         _ExtendSelectionOrCaretPositionAction(this, _nextWordBoundary)),
+
+    ExpandSelectionToLineBreakIntent:
+        _makeOverridable(_UpdateExpandTextSelectionAction(this, _linebreak)),
+    ExpandSelectionToDocumentBoundaryIntent: _makeOverridable(
+        _UpdateExpandTextSelectionAction(this, _documentBoundary)),
 
     // Copy Paste
     SelectAllTextIntent: _makeOverridable(_SelectAllAction(this)),
@@ -2065,9 +2072,18 @@ class _UpdateTextSelectionAction<T extends DirectionalCaretMovementIntent>
     }
 
     final extent = textBoundarySelection.extent;
-    final newExtent = intent.forward
-        ? textBoundary.getTrailingTextBoundaryAt(extent)
-        : textBoundary.getLeadingTextBoundaryAt(extent);
+
+    TextPosition? newExtent;
+
+    try {
+      newExtent = intent.forward
+          ? textBoundary.getTrailingTextBoundaryAt(extent)
+          : textBoundary.getLeadingTextBoundaryAt(extent);
+    } catch (_) {}
+
+    if (newExtent == null) {
+      return null;
+    }
 
     final newSelection = collapseSelection
         ? TextSelection.fromPosition(newExtent)
@@ -2076,6 +2092,68 @@ class _UpdateTextSelectionAction<T extends DirectionalCaretMovementIntent>
     // If collapseAtReversal is true and would have an effect, collapse it.
     if (!selection.isCollapsed &&
         intent.collapseAtReversal &&
+        (selection.baseOffset < selection.extentOffset !=
+            newSelection.baseOffset < newSelection.extentOffset)) {
+      return Actions.invoke(
+        context!,
+        UpdateSelectionIntent(
+          state.textEditingValue,
+          TextSelection.fromPosition(selection.base),
+          SelectionChangedCause.keyboard,
+        ),
+      );
+    }
+
+    return Actions.invoke(
+      context!,
+      UpdateSelectionIntent(textBoundary.textEditingValue, newSelection,
+          SelectionChangedCause.keyboard),
+    );
+  }
+
+  @override
+  bool get isActionEnabled => state.textEditingValue.selection.isValid;
+}
+
+class _UpdateExpandTextSelectionAction<T extends DirectionalTextEditingIntent>
+    extends ContextAction<T> {
+  _UpdateExpandTextSelectionAction(this.state, this.getTextBoundariesForIntent);
+
+  final RawEditorState state;
+
+  final _TextBoundary Function(T intent) getTextBoundariesForIntent;
+
+  @override
+  Object? invoke(T intent, [BuildContext? context]) {
+    final selection = state.textEditingValue.selection;
+    assert(selection.isValid);
+
+    final textBoundary = getTextBoundariesForIntent(intent);
+    final textBoundarySelection = textBoundary.textEditingValue.selection;
+    if (!textBoundarySelection.isValid) {
+      return null;
+    }
+
+    final extent = textBoundarySelection.extent;
+
+    TextPosition? newExtent;
+
+    try {
+      newExtent = intent.forward
+          ? textBoundary.getTrailingTextBoundaryAt(extent)
+          : textBoundary.getLeadingTextBoundaryAt(extent);
+    } catch (_) {
+      // bad state
+    }
+
+    if (newExtent == null) {
+      return null;
+    }
+
+    final newSelection = textBoundarySelection.extendTo(newExtent);
+
+    // If collapseAtReversal is true and would have an effect, collapse it.
+    if (!selection.isCollapsed &&
         (selection.baseOffset < selection.extentOffset !=
             newSelection.baseOffset < newSelection.extentOffset)) {
       return Actions.invoke(
