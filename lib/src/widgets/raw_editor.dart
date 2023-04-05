@@ -491,6 +491,10 @@ class RawEditorState extends EditorState
             minHeight: widget.minHeight ?? 0.0,
             maxHeight: widget.maxHeight ?? double.infinity);
 
+    final controlOrCommand = defaultTargetPlatform == TargetPlatform.macOS
+        ? LogicalKeyboardKey.meta
+        : LogicalKeyboardKey.control;
+
     return TextFieldTapRegion(
       onTapOutside: _defaultOnTapOutside,
       child: QuillStyles(
@@ -500,59 +504,52 @@ class RawEditorState extends EditorState
             // shortcuts added for Desktop platforms.
             LogicalKeySet(LogicalKeyboardKey.escape):
                 const HideSelectionToolbarIntent(),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyZ):
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.keyZ):
                 const UndoTextIntent(SelectionChangedCause.keyboard),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyY):
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.keyY):
                 const RedoTextIntent(SelectionChangedCause.keyboard),
 
             // Selection formatting.
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyB):
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.keyB):
                 const ToggleTextStyleIntent(Attribute.bold),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyU):
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.keyU):
                 const ToggleTextStyleIntent(Attribute.underline),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyI):
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.keyI):
                 const ToggleTextStyleIntent(Attribute.italic),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.shift,
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.shift,
                     LogicalKeyboardKey.keyS):
                 const ToggleTextStyleIntent(Attribute.strikeThrough),
-            LogicalKeySet(
-                    LogicalKeyboardKey.control, LogicalKeyboardKey.backquote):
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.backquote):
                 const ToggleTextStyleIntent(Attribute.inlineCode),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyL):
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.keyL):
                 const ToggleTextStyleIntent(Attribute.ul),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyO):
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.keyO):
                 const ToggleTextStyleIntent(Attribute.ol),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.shift,
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.shift,
                     LogicalKeyboardKey.keyB):
                 const ToggleTextStyleIntent(Attribute.blockQuote),
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.shift,
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.shift,
                     LogicalKeyboardKey.tilde):
                 const ToggleTextStyleIntent(Attribute.codeBlock),
             // Indent
-            LogicalKeySet(LogicalKeyboardKey.control,
-                    LogicalKeyboardKey.bracketRight):
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.bracketRight):
                 const IndentSelectionIntent(true),
-            LogicalKeySet(
-                    LogicalKeyboardKey.control, LogicalKeyboardKey.bracketLeft):
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.bracketLeft):
                 const IndentSelectionIntent(false),
 
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.keyF):
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.keyF):
                 const OpenSearchIntent(),
 
-            LogicalKeySet(
-                    LogicalKeyboardKey.control, LogicalKeyboardKey.digit1):
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.digit1):
                 const ApplyHeaderIntent(Attribute.h1),
-            LogicalKeySet(
-                    LogicalKeyboardKey.control, LogicalKeyboardKey.digit2):
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.digit2):
                 const ApplyHeaderIntent(Attribute.h2),
-            LogicalKeySet(
-                    LogicalKeyboardKey.control, LogicalKeyboardKey.digit3):
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.digit3):
                 const ApplyHeaderIntent(Attribute.h3),
-            LogicalKeySet(
-                    LogicalKeyboardKey.control, LogicalKeyboardKey.digit0):
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.digit0):
                 const ApplyHeaderIntent(Attribute.header),
 
-            LogicalKeySet(LogicalKeyboardKey.control, LogicalKeyboardKey.shift,
+            LogicalKeySet(controlOrCommand, LogicalKeyboardKey.shift,
                 LogicalKeyboardKey.keyL): const ApplyCheckListIntent(),
 
             if (widget.customShortcuts != null) ...widget.customShortcuts!,
