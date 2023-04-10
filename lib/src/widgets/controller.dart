@@ -99,6 +99,25 @@ class QuillController extends ChangeNotifier {
         .mergeAll(toggledStyle);
   }
 
+  Style getPreviousSelectionStyle() {
+    if (selection.start <= 0) {
+      return Style();
+    }
+
+    var nStyle = document.collectStyle(
+        selection.start - 1, selection.end - selection.start - 1);
+    final notInlineStyle = nStyle.attributes.values.where((s) => !s.isInline);
+    nStyle = nStyle.removeAll(notInlineStyle.toSet());
+    if (document.getPlainText(selection.start - 1, 1) == '\n') {
+      final notLinkStyle =
+          nStyle.attributes.values.where((s) => s.key == Attribute.link.key);
+      nStyle = nStyle.removeAll(notLinkStyle.toSet());
+
+      // just keep basic style -> other style maybe removed
+    }
+    return nStyle;
+  }
+
   // Increases or decreases the indent of the current selection by 1.
   void indentSelection(bool isIncrease) {
     final indent = getSelectionStyle().attributes[Attribute.indent.key];
@@ -360,7 +379,12 @@ class QuillController extends ChangeNotifier {
     _selection = selection.copyWith(
         baseOffset: math.min(selection.baseOffset, end),
         extentOffset: math.min(selection.extentOffset, end));
-    toggledStyle = Style();
+    if (_keepStyleOnNewLine) {
+      final style = getPreviousSelectionStyle();
+      toggledStyle = style;
+    } else {
+      toggledStyle = Style();
+    }
     onSelectionChanged?.call(textSelection);
   }
 
